@@ -1,0 +1,97 @@
+1. What is CCDC
+    * Cyber defense competition.
+    * Teams defend a realistic enterprise network.
+2. Real Team Photo
+    * What everyone thinks CCDC looks like.
+3. Actual Team Photo
+    * What it actually looks like.
+4. SEC360 Award
+    * Turns out nerds win trophies too.
+5. How it Works
+    * Blue Team is us.
+    * Red Team are the attackers.
+    * White Team are the judges.
+6. Main Objective
+    * Keep services running.
+    * Protect systems.
+7. Service Availability
+    * Services must remain online.
+    * DNS, email, web, FTP outages cost points.
+8. What Happens During Competition
+    * Live attacks.
+    * Incidents.
+    * Customer and management requests.
+    * We’ll see examples later.
+9. Systems Overview
+    * Introduction to competition infrastructure.
+10. Topology
+    * Windows Server.
+    * Linux Server.
+    * Firewalls.
+    * Routers.
+11. What We Train For
+    * Hardening.
+    * Monitoring.
+    * Incident response.
+    * Troubleshooting.
+    * This is what we train for.
+12. Expectations
+    * Consistent participation.
+    * Practice outside meetings.
+    * Consistency matters more than experience.
+13. Why Participate
+    * Hands-on experience.
+    * Internships and jobs.
+    * Regional and national competition opportunities.
+    * Sponsor and recruiter exposure.
+    * Faisal helps connect students with companies.
+14. Regional Competitors
+    * Illinois Institute of Technology.
+    * Purdue University.
+    * DePaul University.
+    * Goal: Regionals → Nationals.
+    * No Minnesota team has reached Nationals yet.
+15. How to Win
+    * Uptime.
+16. Services Green
+    * Keeping services green is a major part of scoring.
+17. Services Red
+    * This is what it looks like when Red Team attacks.
+18. Splunk Screenshot
+    * This is what Red Team did to our Splunk terminal.
+19. VyOS Screenshot
+    * Apparently, securing the network wasn’t enough to stop Nyan Cat from reaching production.
+20. Scoreboard
+    * Team 04 leads because all services are online.
+21. Inject Results
+    * We achieved a 96% inject score.
+    * Judges congratulated us.
+    * It wasn’t enough to win.
+22. Competition Results
+    * Responded to 96% of injects.
+    * Completed 75% of injects.
+    * Lesson: injects alone don’t win.
+    * Need better service availability and attack detection.
+23. Inject Points
+    * About 100 points each.
+    * Usually 20–30 injects.
+    * Less than ~25% of total score.
+    * Can still impact standings.
+24. 2023 Example
+    * Won despite only 14% inject score.
+    * Strong service uptime and defense mattered more.
+25. Training Starts Now
+    * Last year: ~2 months of training, finished third.
+    * This year training starts now.
+    * Consistency can get us to Nationals.
+26. Final Thoughts
+    * We have the talent.
+    * We have the resources.
+    * We have the time.
+    * The only thing left is the work.
+27. Third Place Photo
+    * Last year we finished third.
+28. Transition Slide
+    * This year we’re aiming for Nationals.
+29. Nationals
+    * That’s the goal. 🏆

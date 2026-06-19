@@ -1,0 +1,1767 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Networking Fundamentals — ICS 232</title>
+    <script type="module" src="/src/main.js"></script>
+  </head>
+  <body>
+    <div class="reveal">
+      <div class="slides">
+
+        <!-- =====================================================
+             TEAM INTRODUCTION
+             ===================================================== -->
+
+        <!-- Slide 1: Title -->
+        <section data-background-color="#111416">
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>whoami</strong>
+            </div>
+            <div class="terminal-body terminal-run is-title" data-command="whoami">
+              <script type="text/plain" class="terminal-output">
+NETWORKING
+FUNDAMENTALS
+ICS 232</script>
+            </div>
+          </div>
+          <aside class="notes">
+            Opening (whole team). Welcome everyone to our presentation on the fundamentals of
+            network communication. Today we are walking through how data actually travels across
+            a network — from the models that describe it, to addressing, to the transport
+            protocols, the supporting services, the application protocols, and finally a live
+            packet capture that ties it all together. Keep the title slide up while the team
+            lines up.
+          </aside>
+        </section>
+
+        <!-- Slide 2: Team roles (no names on slide) -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat team.md</strong>
+            </div>
+            <div class="terminal-body terminal-run is-diagram" data-command="cat team.md">
+              <script type="text/plain" class="terminal-output">
+TEAM ROLES
+------------------------------------------------
+ [1]  TCP/IP & Ethernet  ·  IP addressing
+ [2]  TCP fundamentals   ·  TCP vs UDP
+ [3]  DHCP & DNS         ·  IP packet assembly
+ [4]  Core protocols: FTP / HTTP / POP3 / IMAP
+ [5]  Live Wireshark demonstration</script>
+            </div>
+          </div>
+          <aside class="notes">
+            Introduce the team here (names spoken, not on the slide):
+            [1] Basildog — the OSI and TCP/IP models, Ethernet framing, and IP addressing.
+            [2] Nick Swanson — how TCP works internally, and TCP versus UDP.
+            [3] Ritz742 — DHCP and DNS, plus how IP packets are built and broken apart.
+            [4] BlongVang — the common application protocols: FTP, HTTP, POP3, and IMAP.
+            [5] Havi — a live Wireshark demo that shows every concept in a single FTP session.
+            Each section is roughly 10–15 minutes.
+          </aside>
+        </section>
+
+        <!-- Slide 3: Agenda -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat agenda.md</strong>
+            </div>
+            <div class="terminal-body terminal-run" data-command="cat agenda.md">
+              <script type="text/plain" class="terminal-output">
+Today's agenda
+ 1. The OSI & TCP/IP models
+ 2. IP addressing (IPv4 / IPv6)
+ 3. TCP internals & TCP vs UDP
+ 4. DHCP, DNS & packet assembly
+ 5. Application protocols
+ 6. Live capture: a full FTP session</script>
+            </div>
+          </div>
+          <aside class="notes">
+            Give a quick roadmap so the audience knows where we are going. We start with the
+            theory (the layered models), then addressing, then move up the stack to transport,
+            then the services and application protocols, and we finish by watching real packets
+            in Wireshark. Tell them the demo at the end is where everything connects.
+          </aside>
+        </section>
+
+        <!-- =====================================================
+             SECTION 1 — Basildog
+             TCP/IP & Ethernet  +  IP Address Structure
+             ===================================================== -->
+
+        <!-- Slide 4: Section divider -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cd networking/foundations</strong>
+            </div>
+            <div class="terminal-body terminal-run is-title" data-command="cd networking/foundations">
+              <script type="text/plain" class="terminal-output">
+TCP/IP & ETHERNET
+network communication structure</script>
+            </div>
+          </div>
+          <aside class="notes">
+            (Basildog starts.) I'll cover the foundation: the two layered models everyone refers
+            to — OSI and TCP/IP — how an Ethernet frame is structured, how data is wrapped and
+            unwrapped as it moves through the layers, and then IP addressing for both IPv4 and
+            IPv6.
+          </aside>
+        </section>
+
+        <!-- Slide 5: OSI model overview -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat osi-model.md</strong>
+            </div>
+            <div class="terminal-body terminal-run is-diagram" data-command="cat osi-model.md">
+              <script type="text/plain" class="terminal-output">
+OSI MODEL — 7 layers
+  7  Application    HTTP, FTP, DNS, SMTP
+  6  Presentation   encryption, encoding (TLS)
+  5  Session        sessions, dialog control
+  4  Transport      TCP, UDP  (ports, reliability)
+  3  Network        IP, ICMP  (logical addressing)
+  2  Data Link      Ethernet, MAC, switches
+  1  Physical       cables, signals, NICs</script>
+            </div>
+          </div>
+          <aside class="notes">
+            The OSI model is a 7-layer reference model. It's conceptual — it describes WHAT each
+            layer does, not how it's implemented. Read bottom to top: Physical moves raw bits,
+            Data Link handles local delivery with MAC addresses, Network handles logical
+            addressing and routing with IP, Transport gives us ports and reliability, and the top
+            three (Session, Presentation, Application) deal with the application itself. A common
+            memory aid is "Please Do Not Throw Sausage Pizza Away."
+          </aside>
+        </section>
+
+        <!-- Slide 6: TCP/IP model overview -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat tcpip-model.md</strong>
+            </div>
+            <div class="terminal-body terminal-run is-diagram" data-command="cat tcpip-model.md">
+              <script type="text/plain" class="terminal-output">
+TCP/IP MODEL — 4 layers (what we actually use)
+  4  Application    HTTP, FTP, DNS, SMTP, DHCP
+  3  Transport      TCP, UDP
+  2  Internet       IP, ICMP, ARP
+  1  Network Access  Ethernet, Wi-Fi (Link + Physical)</script>
+            </div>
+          </div>
+          <aside class="notes">
+            The TCP/IP model is the practical model the Internet is actually built on. It
+            collapses OSI's seven layers into four. The Application layer here combines OSI's top
+            three; Transport is the same; Internet maps to OSI's Network layer; and Network Access
+            combines Data Link and Physical. When engineers talk about real-world stacks, this is
+            usually the model they mean.
+          </aside>
+        </section>
+
+        <!-- Slide 7: OSI vs TCP/IP mapping -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat osi-vs-tcpip.md</strong>
+            </div>
+            <div class="terminal-body terminal-run is-diagram" data-command="cat osi-vs-tcpip.md">
+              <script type="text/plain" class="terminal-output">
+   OSI MODEL (7)            TCP/IP MODEL (4)
+ +----------------+
+ | 7 Application  |       +------------------+
+ | 6 Presentation | ----> | Application      |
+ | 5 Session      |       +------------------+
+ +----------------+
+ | 4 Transport    | ----> | Transport        |
+ +----------------+       +------------------+
+ | 3 Network      | ----> | Internet         |
+ +----------------+       +------------------+
+ | 2 Data Link    | ----> | Network Access   |
+ | 1 Physical     |       | (Link)           |
+ +----------------+       +------------------+</script>
+            </div>
+          </div>
+          <aside class="notes">
+            This is how the two models line up. The key relationships: OSI's top three layers all
+            map into TCP/IP's single Application layer. Transport maps one-to-one. OSI's Network
+            layer is TCP/IP's Internet layer — that's where IP lives. And OSI's Data Link plus
+            Physical become TCP/IP's Network Access layer. So they describe the same journey, just
+            at different levels of detail.
+          </aside>
+        </section>
+
+        <!-- Slide 8: Ethernet frame structure -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat ethernet-frame.md</strong>
+            </div>
+            <div class="terminal-body terminal-run is-diagram" data-command="cat ethernet-frame.md">
+              <script type="text/plain" class="terminal-output">
+Ethernet II Frame
++--------+--------+------+---------------+------+
+|  Dest  |  Src   | Type |    Payload    | FCS  |
+|  MAC   |  MAC   |      |  (46-1500 B)  | CRC  |
+|  6 B   |  6 B   | 2 B  |               | 4 B  |
++--------+--------+------+---------------+------+
+ Preamble (7B) + SFD (1B) come before the frame
+ Type: 0x0800 = IPv4 , 0x86DD = IPv6 , 0x0806 = ARP</script>
+            </div>
+          </div>
+          <aside class="notes">
+            At Layer 2, data is carried in Ethernet frames. The frame starts with the destination
+            and source MAC addresses — 6 bytes each, the hardware addresses burned into the NIC.
+            The Type/EtherType field says what's inside (0x0800 means an IPv4 packet). The payload
+            holds the actual packet, between 46 and 1500 bytes — that 1500 is the standard MTU.
+            The FCS at the end is a CRC checksum the receiver uses to detect corruption. The
+            preamble and start-frame delimiter are just for synchronization on the wire.
+          </aside>
+        </section>
+
+        <!-- Slide 9: Encapsulation / decapsulation -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat encapsulation.md</strong>
+            </div>
+            <div class="terminal-body terminal-run is-diagram" data-command="cat encapsulation.md">
+              <script type="text/plain" class="terminal-output">
+SENDING = encapsulation (add headers, going DOWN)
+   [ App data ]
+      + TCP header    -->  Segment   (L4)
+      + IP header     -->  Packet    (L3)
+      + Eth header    -->  Frame     (L2)
+      + bits on wire  -->  Signal    (L1)
+
+RECEIVING = decapsulation (strip headers, going UP)
+   Each layer adds/reads only its own header (PDU)</script>
+            </div>
+          </div>
+          <aside class="notes">
+            Encapsulation is how data gets prepared to send. Starting from the application data,
+            each layer adds its own header as the data moves DOWN the stack: Transport adds a TCP
+            header to make a segment, the Network layer adds an IP header to make a packet, and
+            the Data Link layer adds an Ethernet header to make a frame, which finally goes out as
+            bits. On the receiving side it's the exact reverse — decapsulation — each layer strips
+            and reads its own header and passes the rest up. The unit of data at each layer is
+            called a PDU: segment, packet, frame.
+          </aside>
+        </section>
+
+        <!-- Slide 10: How data moves through the layers -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat data-flow.md</strong>
+            </div>
+            <div class="terminal-body terminal-run is-diagram" data-command="cat data-flow.md">
+              <script type="text/plain" class="terminal-output">
+   SENDER                      RECEIVER
+  +---------+                 +---------+
+  |  App    |  ...logical...  |  App    |
+  | Transp. |  ...peers...    | Transp. |
+  | Network |                 | Network |
+  |  Link   |                 |  Link   |
+  +---------+                 +---------+
+       |                           ^
+       +------- physical wire ------+
+  Down the stack -> across -> up the stack</script>
+            </div>
+          </div>
+          <aside class="notes">
+            Putting it together: data goes DOWN the sender's stack, across the physical medium,
+            and UP the receiver's stack. The important idea is "peer layers." Even though the
+            data physically travels all the way down and back up, each layer behaves as if it's
+            talking directly to the same layer on the other host — the sender's TCP "talks to" the
+            receiver's TCP, the sender's IP "talks to" the receiver's IP, and so on. That logical
+            peer-to-peer view is what the headers make possible.
+          </aside>
+        </section>
+
+        <!-- Slide 11: Section divider — IP addressing -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cd networking/ip-addressing</strong>
+            </div>
+            <div class="terminal-body terminal-run is-title" data-command="cd networking/ip-addressing">
+              <script type="text/plain" class="terminal-output">
+IP ADDRESS
+STRUCTURE</script>
+            </div>
+          </div>
+          <aside class="notes">
+            (Basildog continues.) Now to addressing. MAC addresses get a frame across one link,
+            but to cross networks we need logical addresses — IP addresses. I'll cover IPv4, IPv6,
+            address classes and subnetting, public vs private addressing, and why IPv6 matters.
+          </aside>
+        </section>
+
+        <!-- Slide 12: IPv4 format -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat ipv4.md</strong>
+            </div>
+            <div class="terminal-body terminal-run is-diagram" data-command="cat ipv4.md">
+              <script type="text/plain" class="terminal-output">
+IPv4 = 32-bit address  (4 octets, 8 bits each)
+   192  .  168  .   1   .  10
+  +-----+ +-----+ +-----+ +-----+
+  | 8b  | | 8b  | | 8b  | | 8b  |   = 32 bits
+  +-----+ +-----+ +-----+ +-----+
+  [   network part   ][  host part ]
+  Dotted-decimal  |  ~4.3 billion addresses</script>
+            </div>
+          </div>
+          <aside class="notes">
+            An IPv4 address is 32 bits, written as four octets in dotted-decimal — each octet is
+            8 bits, so each number is 0 to 255. Part of the address identifies the network and
+            part identifies the host; the subnet mask decides where that split happens. 32 bits
+            gives about 4.3 billion addresses, which sounded like plenty in the 1980s but we've
+            essentially run out — and that's the whole reason IPv6 exists.
+          </aside>
+        </section>
+
+        <!-- Slide 13: IPv6 format -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat ipv6.md</strong>
+            </div>
+            <div class="terminal-body terminal-run is-diagram" data-command="cat ipv6.md">
+              <script type="text/plain" class="terminal-output">
+IPv6 = 128-bit address  (8 groups x 16 bits, hex)
+  2001:0db8:85a3:0000:0000:8a2e:0370:7334
+       |
+       v  drop leading zeros + "::" for zero runs
+  2001:db8:85a3::8a2e:370:7334
+
+  ~340 undecillion addresses (3.4 x 10^38)</script>
+            </div>
+          </div>
+          <aside class="notes">
+            IPv6 is 128 bits — four times the size of IPv4. It's written as eight groups of four
+            hex digits separated by colons. To keep it readable you can drop leading zeros in each
+            group, and you can replace one run of all-zero groups with a double colon. So the long
+            form on top compresses to the short form below. The address space is effectively
+            unlimited — about 3.4 times ten to the 38th — enough to give every device on earth its
+            own public address many times over.
+          </aside>
+        </section>
+
+        <!-- Slide 14: Classes & subnetting -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat subnetting.md</strong>
+            </div>
+            <div class="terminal-body terminal-run is-diagram" data-command="cat subnetting.md">
+              <script type="text/plain" class="terminal-output">
+Address Classes & Subnetting
+  Class   1st octet    Default mask        Hosts
+   A       1 - 126     /8   255.0.0.0       ~16M
+   B     128 - 191     /16  255.255.0.0     ~65K
+   C     192 - 223     /24  255.255.255.0    254
+  ----------------------------------------------
+  Mask splits NETWORK bits from HOST bits
+  CIDR /n = n network bits   (e.g. /24 -> 254 hosts)</script>
+            </div>
+          </div>
+          <aside class="notes">
+            Historically IPv4 was divided into classes A, B, and C based on the first octet, each
+            with a default mask. Class A networks are huge, Class C are small. Today we mostly use
+            CIDR notation instead — the slash number, like /24, just says how many leading bits are
+            the network portion. The subnet mask is what tells a host which bits are network and
+            which are host, and subnetting lets us carve one big network into smaller ones. Quick
+            example: a /24 reserves 24 bits for the network, leaving 8 bits for hosts, which is 254
+            usable addresses after reserving the network and broadcast addresses.
+          </aside>
+        </section>
+
+        <!-- Slide 15: Public vs private -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat public-vs-private.md</strong>
+            </div>
+            <div class="terminal-body terminal-run is-diagram" data-command="cat public-vs-private.md">
+              <script type="text/plain" class="terminal-output">
+Public vs Private addressing
+  Private ranges (RFC 1918):
+     10.0.0.0      /8
+     172.16.0.0    /12
+     192.168.0.0   /16
+  Private = internal, reusable, NOT routed on Internet
+  Public  = globally unique, routable
+  NAT translates private <-> public at the router</script>
+            </div>
+          </div>
+          <aside class="notes">
+            Not every address is meant for the open Internet. RFC 1918 sets aside three private
+            ranges — that 192.168 network on your home router is the famous one. Private addresses
+            are reused by millions of networks and are never routed on the public Internet, which
+            is why they don't collide. Public addresses are globally unique. NAT — Network Address
+            Translation — is the trick on your router that lets many private devices share one
+            public address. NAT is also part of why IPv4 has lasted as long as it has.
+          </aside>
+        </section>
+
+        <!-- Slide 16: IPv6 benefits -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat ipv6-benefits.md</strong>
+            </div>
+            <div class="terminal-body terminal-run" data-command="cat ipv6-benefits.md">
+              <script type="text/plain" class="terminal-output">
+Why IPv6 over IPv4
+ + Vast address space (no exhaustion)
+ + No NAT needed -> true end-to-end connectivity
+ + Simpler, fixed-size header (easier routing)
+ + Built-in support for IPsec security
+ + Stateless autoconfiguration (SLAAC)
+ + Efficient multicast, no broadcast storms</script>
+            </div>
+          </div>
+          <aside class="notes">
+            To wrap up my part: IPv6 isn't just "more addresses." Because every device can have a
+            public address, you get true end-to-end connectivity without NAT in the way. The header
+            is simpler and fixed-size, which makes routing faster. Security with IPsec was designed
+            in from the start. Devices can auto-configure their own address with SLAAC, no DHCP
+            server required. And it replaces inefficient broadcast traffic with targeted multicast.
+            That's the foundation — next, Nick takes us into how TCP actually works.
+          </aside>
+        </section>
+
+        <!-- =====================================================
+             SECTION 2 — Nick Swanson
+             TCP Fundamentals  +  TCP vs UDP
+             ===================================================== -->
+
+        <!-- Slide 17: Section divider -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cd transport/tcp</strong>
+            </div>
+            <div class="terminal-body terminal-run is-title" data-command="cd transport/tcp">
+              <script type="text/plain" class="terminal-output">
+TCP
+FUNDAMENTALS</script>
+            </div>
+          </div>
+          <aside class="notes">
+            (Nick Swanson starts.) Thanks. I'm covering the Transport layer — specifically TCP,
+            the protocol that makes reliable connections possible. We'll look at how a connection
+            opens, how data is tracked and acknowledged, how flow is controlled, and then compare
+            TCP to its lightweight cousin, UDP.
+          </aside>
+        </section>
+
+        <!-- Slide 18: Three-way handshake -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat handshake.md</strong>
+            </div>
+            <div class="terminal-body terminal-run is-diagram" data-command="cat handshake.md">
+              <script type="text/plain" class="terminal-output">
+TCP Three-Way Handshake
+  CLIENT                              SERVER
+    |  --------- SYN (seq=x) --------> |
+    |  <----- SYN, ACK (seq=y,         |
+    |              ack=x+1) ---------- |
+    |  --------- ACK (ack=y+1) ------> |
+    |     [ connection ESTABLISHED ]   |</script>
+            </div>
+          </div>
+          <aside class="notes">
+            Before TCP sends any data, it sets up a connection with a three-way handshake. The
+            client sends a SYN with an initial sequence number x. The server replies with a
+            SYN-ACK: it acknowledges x and sends its own sequence number y. The client sends a
+            final ACK. Now both sides have agreed on starting sequence numbers and the connection
+            is established. You'll see exactly these three packets in the Wireshark demo at the end.
+          </aside>
+        </section>
+
+        <!-- Slide 19: Sequence & ACK numbers -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat seq-ack.md</strong>
+            </div>
+            <div class="terminal-body terminal-run" data-command="cat seq-ack.md">
+              <script type="text/plain" class="terminal-output">
+Sequence & Acknowledgment numbers
+ SEQ = byte offset of this segment's data
+ ACK = next byte expected from the other side
+ Every byte is counted and tracked
+ -> enables ordering and detecting loss
+ e.g. send seq=1000 (100 bytes) -> peer ACKs 1100</script>
+            </div>
+          </div>
+          <aside class="notes">
+            TCP treats your data as a continuous stream of bytes, and it numbers every byte. The
+            sequence number marks where this segment's data starts in that stream. The
+            acknowledgment number is the receiver saying "I have everything up to here, send me
+            this next." In the example, if I send sequence 1000 carrying 100 bytes, the receiver
+            replies with ACK 1100 — meaning "got bytes 1000 through 1099, give me 1100 next."
+            This is how TCP reorders out-of-order packets and notices when something is missing.
+          </aside>
+        </section>
+
+        <!-- Slide 20: TCP windowing -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat windowing.md</strong>
+            </div>
+            <div class="terminal-body terminal-run" data-command="cat windowing.md">
+              <script type="text/plain" class="terminal-output">
+TCP Windowing
+ Window = bytes the sender may have un-ACKed
+ Receiver advertises a window size in each ACK
+ Larger window -> more data "in flight" at once
+ The sliding window moves forward as ACKs arrive
+ Balances throughput against receiver capacity</script>
+            </div>
+          </div>
+          <aside class="notes">
+            If TCP waited for an acknowledgment after every single segment, it would be painfully
+            slow. Windowing fixes that. The window is how many bytes the sender is allowed to have
+            outstanding — unacknowledged — at any moment. The receiver advertises its window in
+            every ACK. A bigger window means more data in flight and higher throughput. As ACKs
+            come back, the window "slides" forward and more data can be sent. It's a continuous
+            balancing act between speed and not overwhelming the receiver.
+          </aside>
+        </section>
+
+        <!-- Slide 21: Flow control -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat flow-control.md</strong>
+            </div>
+            <div class="terminal-body terminal-run" data-command="cat flow-control.md">
+              <script type="text/plain" class="terminal-output">
+Flow Control
+ Goal: a fast sender must not drown a slow receiver
+ Receiver shrinks/grows its advertised window
+ Window = 0  -> sender pauses (zero-window)
+ Sender resumes when a window update arrives
+ NB: flow control (receiver) != congestion
+     control (the network)</script>
+            </div>
+          </div>
+          <aside class="notes">
+            Flow control is the receiver protecting itself. If the sender is fast and the receiver
+            is slow — maybe its buffer is filling up — the receiver simply advertises a smaller
+            window. If its buffer is completely full it can advertise a window of zero, which tells
+            the sender to stop entirely until it gets a window update. One distinction worth making:
+            flow control is about the RECEIVER's capacity. Congestion control, which is related, is
+            about the NETWORK's capacity. Both exist, but they solve different problems.
+          </aside>
+        </section>
+
+        <!-- Slide 22: Keep-alive -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat keepalive.md</strong>
+            </div>
+            <div class="terminal-body terminal-run" data-command="cat keepalive.md">
+              <script type="text/plain" class="terminal-output">
+TCP Keep-Alive
+ Small probes sent on an idle connection
+ Confirms the peer is still reachable
+ Detects dead / half-open connections
+ Frees resources when the peer has vanished
+ Off by default; tuned by the OS / application</script>
+            </div>
+          </div>
+          <aside class="notes">
+            A TCP connection can sit idle for a long time with no data. How does each side know the
+            other is still there? Keep-alive messages. After a period of silence, one side sends a
+            tiny probe. If it gets a response, great, the connection stays open. If there's no
+            response after several tries, TCP assumes the peer is gone — maybe it crashed or the
+            cable was pulled — and tears the connection down so it isn't holding resources for a
+            dead session. Keep-alive is usually off by default and tuned by the OS.
+          </aside>
+        </section>
+
+        <!-- Slide 23: Reliability mechanisms -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat reliability.md</strong>
+            </div>
+            <div class="terminal-body terminal-run" data-command="cat reliability.md">
+              <script type="text/plain" class="terminal-output">
+How TCP stays reliable
+ + Sequence numbers   -> correct ordering
+ + Acknowledgments    -> confirmed delivery
+ + Retransmission     -> recover lost segments
+ + Checksums          -> detect corruption
+ + Flow & congestion control
+ + Connection setup / graceful teardown</script>
+            </div>
+          </div>
+          <aside class="notes">
+            This slide is the summary of why we call TCP "reliable." Sequence numbers put data back
+            in order. Acknowledgments confirm what arrived. If an ACK doesn't come back in time, TCP
+            retransmits the missing data. Checksums catch corruption. Flow and congestion control
+            keep things from being overwhelmed. And the connection is explicitly opened and gracefully
+            closed. Stack all of that together and you get a protocol that guarantees your data
+            arrives complete and in order. Now — what if you don't need all that? That's UDP.
+          </aside>
+        </section>
+
+        <!-- Slide 24: Section divider — TCP vs UDP -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>diff tcp udp</strong>
+            </div>
+            <div class="terminal-body terminal-run is-title" data-command="diff tcp udp">
+              <script type="text/plain" class="terminal-output">
+TCP vs UDP</script>
+            </div>
+          </div>
+          <aside class="notes">
+            (Nick continues.) TCP gives us all those guarantees, but guarantees cost time and
+            overhead. Sometimes speed matters more than perfection. That's where UDP comes in —
+            let's compare them.
+          </aside>
+        </section>
+
+        <!-- Slide 25: TCP vs UDP table -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat tcp-vs-udp.md</strong>
+            </div>
+            <div class="terminal-body terminal-run is-diagram" data-command="cat tcp-vs-udp.md">
+              <script type="text/plain" class="terminal-output">
+TCP vs UDP
+                     TCP             UDP
+  Connection        yes (3-way)     no (connectionless)
+  Reliable          yes             no
+  Ordered           yes             no
+  Error recovery    retransmits     none
+  Header size       20-60 bytes     8 bytes
+  Speed / latency   slower          faster</script>
+            </div>
+          </div>
+          <aside class="notes">
+            Side by side: TCP is connection-oriented — it does the handshake — UDP just fires
+            packets with no setup. TCP guarantees delivery and order; UDP makes no promises, a lost
+            packet is simply lost. TCP retransmits; UDP doesn't even notice. And look at the header
+            sizes: TCP's header is 20 bytes minimum and can grow with options, while UDP's is a
+            tiny fixed 8 bytes. That smaller header and lack of bookkeeping is exactly why UDP is
+            faster and lower latency.
+          </aside>
+        </section>
+
+        <!-- Slide 26: Speed & overhead -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat speed-overhead.md</strong>
+            </div>
+            <div class="terminal-body terminal-run" data-command="cat speed-overhead.md">
+              <script type="text/plain" class="terminal-output">
+Speed & overhead trade-off
+ TCP: handshake + ACKs + retransmits + 20-60 B header
+   -> more overhead, but GUARANTEED delivery
+ UDP: fire-and-forget + 8 B header
+   -> minimal overhead, LOWEST latency
+ Choose based on: does a lost packet matter?</script>
+            </div>
+          </div>
+          <aside class="notes">
+            The way to think about it: TCP spends extra time and bytes — the handshake, the
+            acknowledgments, retransmissions, a bigger header — to buy you a guarantee. UDP skips
+            all of that to be as fast and lean as possible. The decision always comes down to one
+            question: does it matter if a packet is lost? If yes — a file, a web page, an email —
+            use TCP. If a slightly dropped packet is fine and you can't afford to wait — live voice
+            or video — use UDP.
+          </aside>
+        </section>
+
+        <!-- Slide 27: Use cases -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat use-cases.md</strong>
+            </div>
+            <div class="terminal-body terminal-run" data-command="cat use-cases.md">
+              <script type="text/plain" class="terminal-output">
+When to use which
+ TCP  (correctness matters):
+   web (HTTP/HTTPS), email, FTP, SSH, file transfer
+ UDP  (speed / real-time matters):
+   DNS, DHCP, VoIP, video streaming, online games
+ Some use both / hybrids (e.g. DNS, QUIC)</script>
+            </div>
+          </div>
+          <aside class="notes">
+            Real examples. TCP powers the things where every byte must arrive: web browsing, email,
+            FTP file transfers, SSH. UDP powers things where being on time beats being perfect: DNS
+            lookups, DHCP, voice over IP, live video, and online gaming. And there are hybrids —
+            DNS uses UDP for normal queries but switches to TCP for large responses, and newer
+            protocols like QUIC build reliability on top of UDP. With that, I'll hand off to Ritz
+            for DHCP, DNS, and how packets are assembled.
+          </aside>
+        </section>
+
+        <!-- =====================================================
+             SECTION 3 — Ritz742
+             DHCP & DNS  +  IP Packet Assembly / Disassembly
+             ===================================================== -->
+
+        <!-- Slide 28: Section divider -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cd services/dhcp-dns</strong>
+            </div>
+            <div class="terminal-body terminal-run is-title" data-command="cd services/dhcp-dns">
+              <script type="text/plain" class="terminal-output">
+DHCP & DNS</script>
+            </div>
+          </div>
+          <aside class="notes">
+            (Ritz742 starts.) I'm covering two services that work quietly in the background but are
+            essential: DHCP, which hands devices their IP configuration automatically, and DNS,
+            which turns names into addresses. Then I'll show how IP packets are actually built and
+            taken apart.
+          </aside>
+        </section>
+
+        <!-- Slide 29: Purpose of DHCP -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat dhcp-purpose.md</strong>
+            </div>
+            <div class="terminal-body terminal-run" data-command="cat dhcp-purpose.md">
+              <script type="text/plain" class="terminal-output">
+DHCP — Dynamic Host Configuration Protocol
+ Auto-assigns IP configuration to clients
+ Hands out: IP address, subnet mask,
+            default gateway, DNS servers
+ No manual setup needed per device
+ Manages a pool (scope) of addresses
+ Runs over UDP: server :67 , client :68</script>
+            </div>
+          </div>
+          <aside class="notes">
+            Every device on a network needs an IP address, a subnet mask, a gateway, and DNS
+            servers. Imagine configuring all of that by hand on every phone and laptop — DHCP
+            automates it. When a device joins the network, the DHCP server leases it a complete
+            configuration from a managed pool of addresses, called a scope. It runs over UDP, with
+            the server on port 67 and the client on port 68. The exchange has a memorable name:
+            DORA.
+          </aside>
+        </section>
+
+        <!-- Slide 30: DORA -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat dora.md</strong>
+            </div>
+            <div class="terminal-body terminal-run is-diagram" data-command="cat dora.md">
+              <script type="text/plain" class="terminal-output">
+DHCP DORA Exchange   (client has no IP yet)
+  CLIENT                              SERVER
+    |  ---- DISCOVER (broadcast) ----> |
+    |  <-------- OFFER (IP) ---------- |
+    |  ---- REQUEST (broadcast) -----> |
+    |  <------- ACKNOWLEDGE ---------- |
+    |      [ IP leased + configured ]  |</script>
+            </div>
+          </div>
+          <aside class="notes">
+            DORA stands for Discover, Offer, Request, Acknowledge. The client has no IP yet, so it
+            broadcasts a DISCOVER — "is there a DHCP server out there?" Any server replies with an
+            OFFER containing an available IP. The client broadcasts a REQUEST formally asking for
+            that specific offer — broadcast, so any other servers know which offer it took. The
+            server confirms with an ACKNOWLEDGE, and now the client is fully configured. You'll
+            see these four packets first in the Wireshark demo.
+          </aside>
+        </section>
+
+        <!-- Slide 31: DHCP lease -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat dhcp-lease.md</strong>
+            </div>
+            <div class="terminal-body terminal-run" data-command="cat dhcp-lease.md">
+              <script type="text/plain" class="terminal-output">
+DHCP Lease Lifecycle
+ Lease = a time-limited address assignment
+ ~50% of lease  -> RENEW (unicast to server)
+ ~87.5%         -> REBIND (broadcast) if no reply
+ Expiry         -> release + start DORA again
+ Frees unused addresses back into the pool</script>
+            </div>
+          </div>
+          <aside class="notes">
+            A DHCP address isn't permanent — it's a lease with a time limit. About halfway through
+            the lease, the client tries to renew directly with the server. If that fails, at around
+            seven-eighths of the lease it broadcasts a rebind to any server. If the lease fully
+            expires, the client gives up the address and starts DORA over. The whole point of leasing
+            is efficiency: addresses for devices that have left the network eventually return to the
+            pool to be reused.
+          </aside>
+        </section>
+
+        <!-- Slide 32: Purpose of DNS -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat dns-purpose.md</strong>
+            </div>
+            <div class="terminal-body terminal-run" data-command="cat dns-purpose.md">
+              <script type="text/plain" class="terminal-output">
+DNS — Domain Name System
+ Translates human names -> IP addresses
+ "the phonebook of the Internet"
+ example.com  ->  93.184.216.34
+ A distributed, hierarchical database
+ Mostly UDP :53  (TCP for large / zone transfers)</script>
+            </div>
+          </div>
+          <aside class="notes">
+            People remember names like example.com; computers route using IP addresses. DNS bridges
+            that gap — it's often called the phonebook of the Internet. It's not one giant server;
+            it's a distributed, hierarchical system spread across the world, which is what makes it
+            fast and resilient. It runs mostly over UDP on port 53, switching to TCP for large
+            responses or zone transfers between servers.
+          </aside>
+        </section>
+
+        <!-- Slide 33: DNS resolution -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat dns-resolution.md</strong>
+            </div>
+            <div class="terminal-body terminal-run is-diagram" data-command="cat dns-resolution.md">
+              <script type="text/plain" class="terminal-output">
+DNS Recursive Resolution:  www.example.com
+  Host --> Resolver --> Root --> TLD --> Authoritative
+
+  1) Host asks resolver: "www.example.com?"
+  2) Resolver -> Root: "where is .com ?"
+  3) Resolver -> .com TLD: "where is example.com ?"
+  4) Resolver -> example.com NS -> 93.184.216.34
+  5) Resolver caches the answer + returns it</script>
+            </div>
+          </div>
+          <aside class="notes">
+            Here's how a name gets resolved. Your device asks a resolver — usually your ISP's or
+            something like 8.8.8.8. If the resolver doesn't already know the answer, it walks the
+            hierarchy: it asks a root server who handles .com, the root points it to the .com TLD
+            servers, the TLD points it to example.com's authoritative name server, and that server
+            gives the actual IP. The resolver caches the answer so the next lookup is instant. We'll
+            watch a real query and response in the demo.
+          </aside>
+        </section>
+
+        <!-- Slide 34: DNS record types -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat dns-records.md</strong>
+            </div>
+            <div class="terminal-body terminal-run" data-command="cat dns-records.md">
+              <script type="text/plain" class="terminal-output">
+Common DNS record types
+ A      name  -> IPv4 address
+ AAAA   name  -> IPv6 address
+ CNAME  alias -> another (canonical) name
+ MX     mail server(s) for a domain
+ (also: NS, TXT, PTR, SOA)</script>
+            </div>
+          </div>
+          <aside class="notes">
+            DNS stores different record types for different jobs. An A record maps a name to an IPv4
+            address; AAAA — the "quad-A" — maps to an IPv6 address. A CNAME is an alias pointing one
+            name at another, so www.example.com can point to example.com. An MX record tells mail
+            servers where to deliver email for a domain. There are others — NS for name servers, TXT
+            for things like SPF, PTR for reverse lookups — but A, AAAA, CNAME, and MX are the ones
+            you'll meet most.
+          </aside>
+        </section>
+
+        <!-- Slide 35: Section divider — packet assembly -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cd networking/packets</strong>
+            </div>
+            <div class="terminal-body terminal-run is-title" data-command="cd networking/packets">
+              <script type="text/plain" class="terminal-output">
+IP PACKET
+ASSEMBLY</script>
+            </div>
+          </div>
+          <aside class="notes">
+            (Ritz742 continues.) Now down to the packet level — how an IP packet is actually built
+            from application data, what's inside it, and what happens when a packet is too big for
+            the network it has to cross.
+          </aside>
+        </section>
+
+        <!-- Slide 36: Packet creation -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat packet-build.md</strong>
+            </div>
+            <div class="terminal-body terminal-run" data-command="cat packet-build.md">
+              <script type="text/plain" class="terminal-output">
+Building a packet (assembly)
+ 1. App data handed down to the transport layer
+ 2. + TCP/UDP header  -> segment / datagram
+ 3. + IP header       -> packet
+ 4. + frame header    -> frame on the wire
+ Headers wrap the payload at every layer
+ (this is encapsulation, seen from the packet's view)</script>
+            </div>
+          </div>
+          <aside class="notes">
+            This is encapsulation again, but now from the packet's point of view. The application
+            hands its data to the transport layer, which wraps it with a TCP or UDP header to make a
+            segment or datagram. The network layer wraps that with an IP header to make a packet —
+            adding the source and destination IP addresses. Then the link layer wraps it in a frame
+            for transmission. Each layer adds exactly the control information that layer needs.
+          </aside>
+        </section>
+
+        <!-- Slide 37: Headers & payload -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat headers-payload.md</strong>
+            </div>
+            <div class="terminal-body terminal-run is-diagram" data-command="cat headers-payload.md">
+              <script type="text/plain" class="terminal-output">
+Headers wrap the payload at each layer
+  +----------+----------+----------+-----------+
+  | Eth hdr  | IP hdr   | TCP hdr  |   Data    |
+  | L2 / MAC | L3 / IP  | L4 /port |  payload  |
+  +----------+----------+----------+-----------+
+  Header  = control info (addresses, ports, flags)
+  Payload = the actual data being carried
+  Each layer reads ONLY its own header</script>
+            </div>
+          </div>
+          <aside class="notes">
+            If you laid a packet out flat, this is what you'd see: a stack of headers followed by
+            the payload. The Ethernet header has MAC addresses, the IP header has IP addresses, the
+            TCP header has port numbers and flags, and then finally the actual data. A header is just
+            control information; the payload is the cargo. The elegant part is that each layer only
+            looks at its own header and treats everything inside as opaque payload — that separation
+            is what lets the whole stack be modular.
+          </aside>
+        </section>
+
+        <!-- Slide 38: Fragmentation & reassembly -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat fragmentation.md</strong>
+            </div>
+            <div class="terminal-body terminal-run" data-command="cat fragmentation.md">
+              <script type="text/plain" class="terminal-output">
+Fragmentation & Reassembly
+ Packet bigger than the link MTU -> split into fragments
+ IP header tracks: Identification, Flags, Frag Offset
+ Reassembled at the DESTINATION host (not en route)
+ One lost fragment -> the whole packet is dropped
+ IPv6: only the source may fragment</script>
+            </div>
+          </div>
+          <aside class="notes">
+            Sometimes a packet is bigger than a particular link can carry. When that happens with
+            IPv4, the packet is fragmented — split into smaller pieces. The IP header carries the
+            fields needed to put it back together: an identification number, flags, and a fragment
+            offset. Reassembly happens only at the final destination, not at each router. The
+            downside: if even one fragment is lost, the entire original packet has to be discarded
+            and resent. IPv6 changed this so only the sending host can fragment, which keeps routers
+            faster.
+          </aside>
+        </section>
+
+        <!-- Slide 39: MTU -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat mtu.md</strong>
+            </div>
+            <div class="terminal-body terminal-run" data-command="cat mtu.md">
+              <script type="text/plain" class="terminal-output">
+MTU — Maximum Transmission Unit
+ Largest payload a link can carry in one frame
+ Ethernet default MTU = 1500 bytes
+ Too big -> fragmentation (or drops if DF is set)
+ Path MTU Discovery finds the smallest hop on a path
+ Jumbo frames (~9000 B) on some high-speed LANs</script>
+            </div>
+          </div>
+          <aside class="notes">
+            MTU is the maximum size of payload a single frame can carry on a given link. For standard
+            Ethernet that's 1500 bytes. If a packet exceeds the MTU it gets fragmented — or dropped
+            entirely if the "Don't Fragment" flag is set. Path MTU Discovery is how hosts find the
+            smallest MTU along the entire route so they can size packets to avoid fragmentation. Some
+            high-speed local networks use jumbo frames up to around 9000 bytes for efficiency. With
+            that, I'll hand over to BlongVang for the application protocols.
+          </aside>
+        </section>
+
+        <!-- =====================================================
+             SECTION 4 — BlongVang
+             Common Network Protocols: FTP / HTTP / POP3 / IMAP
+             ===================================================== -->
+
+        <!-- Slide 40: Section divider -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cd app-layer/protocols</strong>
+            </div>
+            <div class="terminal-body terminal-run is-title" data-command="cd app-layer/protocols">
+              <script type="text/plain" class="terminal-output">
+COMMON
+PROTOCOLS</script>
+            </div>
+          </div>
+          <aside class="notes">
+            (BlongVang starts.) We've built up from the wire to the packet to the connection. Now
+            the top of the stack — the application protocols people actually use every day. I'll
+            cover FTP, HTTP, POP3, and IMAP, and for each: its purpose, default ports, basic
+            commands, common use cases, and the security considerations.
+          </aside>
+        </section>
+
+        <!-- Slide 41: Protocol overview table -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat protocols.md</strong>
+            </div>
+            <div class="terminal-body terminal-run is-diagram" data-command="cat protocols.md">
+              <script type="text/plain" class="terminal-output">
+Application-Layer Protocols (all over TCP)
+  Protocol   Port(s)   Purpose
+  FTP        21 / 20   transfer files
+  HTTP       80        serve web pages
+  POP3       110       download email
+  IMAP       143       sync email
+  ------------------------------------------------
+  Secure:  FTPS/SFTP  HTTPS:443  POP3S:995  IMAPS:993</script>
+            </div>
+          </div>
+          <aside class="notes">
+            Here's the map of what I'm covering. Four protocols, all running over TCP because they
+            all need reliable delivery. FTP for files, HTTP for the web, and POP3 and IMAP for
+            email. Memorize the default ports — they come up constantly: 21 for FTP, 80 for HTTP,
+            110 for POP3, 143 for IMAP. And every one of them has a TLS-secured version, listed on
+            the bottom row, which we'll come back to at the end.
+          </aside>
+        </section>
+
+        <!-- Slide 42: FTP -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat ftp.md</strong>
+            </div>
+            <div class="terminal-body terminal-run" data-command="cat ftp.md">
+              <script type="text/plain" class="terminal-output">
+FTP — File Transfer Protocol
+ Purpose: transfer files between hosts
+ Ports: 21 control , 20 data (active mode)
+ Two channels: commands + data, separately
+ Modes: active vs passive (PASV)
+ Auth: username / password (or anonymous)</script>
+            </div>
+          </div>
+          <aside class="notes">
+            FTP moves files between computers. Its quirk is that it uses two separate connections: a
+            control channel on port 21 for commands, and a separate data channel for the actual file
+            bytes. In active mode the data uses port 20; in passive mode — PASV — the server opens a
+            port and tells the client, which is friendlier to firewalls and NAT. You authenticate
+            with a username and password, or log in anonymously for public servers.
+          </aside>
+        </section>
+
+        <!-- Slide 43: FTP commands & use cases -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat ftp-commands.md</strong>
+            </div>
+            <div class="terminal-body terminal-run" data-command="cat ftp-commands.md">
+              <script type="text/plain" class="terminal-output">
+FTP basics
+ USER / PASS   log in
+ LIST          list files
+ RETR / STOR   download / upload
+ PASV          enter passive mode
+ QUIT          end the session
+ Use: site uploads, backups, file servers
+ Security: cleartext! creds visible -> use FTPS/SFTP</script>
+            </div>
+          </div>
+          <aside class="notes">
+            These are the core FTP commands, and you'll literally see them in the Wireshark demo:
+            USER and PASS to log in, LIST to see files, RETR to download, STOR to upload, PASV to go
+            passive, QUIT to leave. FTP is still used for website uploads, backups, and internal file
+            servers. The big security warning: classic FTP sends everything — including your password
+            — in plain text. Anyone capturing traffic can read it. Always prefer FTPS or SFTP.
+          </aside>
+        </section>
+
+        <!-- Slide 44: HTTP -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat http.md</strong>
+            </div>
+            <div class="terminal-body terminal-run" data-command="cat http.md">
+              <script type="text/plain" class="terminal-output">
+HTTP — HyperText Transfer Protocol
+ Purpose: request and serve web resources
+ Port: 80   (HTTPS = 443, encrypted with TLS)
+ Stateless request / response model
+ Client sends method + URL -> server responds
+ Cookies / tokens add state on top</script>
+            </div>
+          </div>
+          <aside class="notes">
+            HTTP is the protocol of the web. The client — your browser — sends a request for a
+            resource, and the server sends back a response. Default port 80, or 443 for HTTPS which
+            is just HTTP wrapped in TLS encryption. HTTP is stateless: each request stands alone and
+            the server doesn't inherently remember you between requests. That's why cookies and
+            tokens exist — they add session state on top of an otherwise stateless protocol.
+          </aside>
+        </section>
+
+        <!-- Slide 45: HTTP methods & use cases -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat http-methods.md</strong>
+            </div>
+            <div class="terminal-body terminal-run" data-command="cat http-methods.md">
+              <script type="text/plain" class="terminal-output">
+HTTP basics
+ GET     fetch a resource
+ POST    submit data
+ PUT     create / replace
+ DELETE  remove a resource
+ Status: 200 OK . 301 moved . 404 not found . 500 error
+ Use: websites, REST APIs, web apps
+ Security: always use HTTPS (TLS) — never plain HTTP</script>
+            </div>
+          </div>
+          <aside class="notes">
+            HTTP uses methods to say what you want to do: GET to fetch, POST to submit, PUT to
+            create or replace, DELETE to remove. The server answers with a status code — 200 means
+            success, 301 a redirect, the famous 404 means not found, 500 is a server error. Beyond
+            web pages, this is also how REST APIs work. Security-wise the rule today is simple: use
+            HTTPS everywhere. Plain HTTP exposes everything in transit, so modern browsers actively
+            flag it as not secure.
+          </aside>
+        </section>
+
+        <!-- Slide 46: POP3 -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat pop3.md</strong>
+            </div>
+            <div class="terminal-body terminal-run" data-command="cat pop3.md">
+              <script type="text/plain" class="terminal-output">
+POP3 — Post Office Protocol v3
+ Purpose: download email from the server
+ Port: 110   (POP3S = 995, TLS)
+ Typically downloads then DELETES from server
+ Single-device, offline reading model
+ Commands: USER PASS LIST RETR DELE QUIT
+ Security: cleartext -> use POP3S / TLS</script>
+            </div>
+          </div>
+          <aside class="notes">
+            POP3 is the older email-retrieval protocol. The classic behavior: it downloads your
+            messages to one device and, by default, deletes them from the server. That made sense
+            when you had a single computer and limited server storage — you pull mail down and read
+            it offline. Port 110, or 995 for the encrypted POP3S. Its commands mirror what you'd
+            expect — log in, list, retrieve, delete. Like the others, plain POP3 is cleartext, so use
+            the TLS version.
+          </aside>
+        </section>
+
+        <!-- Slide 47: IMAP -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat imap.md</strong>
+            </div>
+            <div class="terminal-body terminal-run" data-command="cat imap.md">
+              <script type="text/plain" class="terminal-output">
+IMAP — Internet Message Access Protocol
+ Purpose: access & sync email ON the server
+ Port: 143   (IMAPS = 993, TLS)
+ Mail stays on server -> multi-device sync
+ Server-side folders, flags (read/unread)
+ Commands: LOGIN SELECT FETCH STORE LOGOUT
+ Security: cleartext -> use IMAPS / TLS</script>
+            </div>
+          </div>
+          <aside class="notes">
+            IMAP is the modern way email works. Instead of downloading and deleting, IMAP keeps your
+            mail on the server and synchronizes it across all your devices — phone, laptop, web. Read
+            a message on your phone and it shows as read on your laptop, because the folders and
+            read/unread flags live on the server. Port 143, or 993 for IMAPS. This is what almost
+            everyone uses today. Same security note: use the encrypted version.
+          </aside>
+        </section>
+
+        <!-- Slide 48: POP3 vs IMAP -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat pop3-vs-imap.md</strong>
+            </div>
+            <div class="terminal-body terminal-run is-diagram" data-command="cat pop3-vs-imap.md">
+              <script type="text/plain" class="terminal-output">
+POP3 vs IMAP
+                    POP3            IMAP
+  Mail stored       local device    on the server
+  Multi-device      poor            excellent
+  Folder sync       no              yes
+  Works offline     yes             cached copies
+  Port (TLS)        110 (995)       143 (993)</script>
+            </div>
+          </div>
+          <aside class="notes">
+            Quick comparison so the difference is crisp. POP3 pulls mail down to one device; IMAP
+            keeps it on the server. POP3 is poor for multiple devices; IMAP is built for them. IMAP
+            syncs folders and status; POP3 doesn't. POP3 is naturally offline since everything is
+            local; IMAP keeps cached copies for offline use. The short version: POP3 is single-device
+            and old-school, IMAP is multi-device and what we use now.
+          </aside>
+        </section>
+
+        <!-- Slide 49: Security considerations -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat protocol-security.md</strong>
+            </div>
+            <div class="terminal-body terminal-run" data-command="cat protocol-security.md">
+              <script type="text/plain" class="terminal-output">
+Security considerations (all four protocols)
+ FTP / HTTP / POP3 / IMAP = PLAINTEXT by default
+ -> credentials and data can be sniffed off the wire
+ Always prefer the encrypted versions:
+    FTPS/SFTP . HTTPS . POP3S . IMAPS
+ TLS adds confidentiality + integrity
+ Also: restrict open ports, use strong authentication</script>
+            </div>
+          </div>
+          <aside class="notes">
+            The common thread across all four protocols: in their original form they send everything
+            in clear text — usernames, passwords, content — so anyone who can capture the traffic can
+            read it. We'll prove exactly that in the demo when we see the FTP password in plain view.
+            The fix in every case is TLS: FTPS, HTTPS, POP3S, IMAPS. TLS gives you confidentiality
+            and integrity. Add good practices — close unused ports, use strong authentication — and
+            you're in much better shape. Next, Havi will show all of this happening live.
+          </aside>
+        </section>
+
+        <!-- =====================================================
+             SECTION 5 — Havi
+             Live Wireshark Demonstration  (screenshots + instructions)
+             ===================================================== -->
+
+        <!-- Slide 50: Section divider -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>sudo wireshark &amp;</strong>
+            </div>
+            <div class="terminal-body terminal-run is-title" data-command="sudo wireshark &amp;">
+              <script type="text/plain" class="terminal-output">
+LIVE
+WIRESHARK DEMO</script>
+            </div>
+          </div>
+          <aside class="notes">
+            (Havi starts — this is the live demo.) Everything the team described — DHCP, DNS, the TCP
+            handshake, FTP — happens in milliseconds whenever you do anything online. Wireshark lets
+            us slow it down and watch each packet. I'm going to capture one complete FTP session and
+            walk through every stage. DEMO NOTE: have the capture ready (or a saved .pcap as backup)
+            before this slide so there's no dead air.
+          </aside>
+        </section>
+
+        <!-- Slide 51: Demo plan -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat demo-plan.md</strong>
+            </div>
+            <div class="terminal-body terminal-run is-diagram" data-command="cat demo-plan.md">
+              <script type="text/plain" class="terminal-output">
+Demo: one full FTP session, start to finish
+  1. DHCP    — obtain an IP address (DORA)
+  2. DNS     — resolve the server's name
+  3. TCP     — three-way handshake
+  4. FTP     — authentication (USER / PASS)
+  5. FTP     — file transfer (RETR / STOR)
+  6. DATA    — data packets exchanged
+  7. TCP     — connection termination (FIN)</script>
+            </div>
+          </div>
+          <aside class="notes">
+            Here's the roadmap for the capture, and notice it's the whole presentation in order:
+            first DHCP gets us an address, then DNS resolves the server name, then TCP opens the
+            connection, then FTP logs in and transfers a file, and finally TCP closes the connection
+            cleanly. As I go I'll point out the OSI/TCP-IP layers, the source and destination
+            addresses, and how the protocols hand off to each other.
+          </aside>
+        </section>
+
+        <!-- Slide 52: Capture setup / instructions -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat capture-setup.md</strong>
+            </div>
+            <div class="terminal-body terminal-run is-diagram" data-command="cat capture-setup.md">
+              <script type="text/plain" class="terminal-output">
+Capture setup (do this live)
+  1. Open Wireshark, choose the network interface
+  2. Start capture  (blue shark fin  /  Ctrl+E)
+  3. Generate traffic: connect to the FTP server
+     and download a file
+  4. Stop capture  (red square)
+  5. Use display filters to isolate each step ->
+       bootp     dns     ftp     tcp     ftp-data</script>
+            </div>
+          </div>
+          <aside class="notes">
+            (Readable setup steps for the live capture.) Pick the active interface, start the capture
+            with the shark-fin button or Ctrl+E, then generate the traffic by connecting to the FTP
+            server and pulling a file. Stop the capture, then use display filters to jump to each
+            stage cleanly. The filters I'll use, in order: "bootp" for DHCP, "dns", then the TCP
+            handshake, then "ftp" for commands, then "ftp-data". DEMO TIP: pre-type each filter so you
+            can switch instantly while talking.
+          </aside>
+        </section>
+
+        <!-- Slide 53: DHCP screenshot -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>wireshark: filter "bootp"</strong>
+            </div>
+            <div class="terminal-body terminal-run visual-slide is-diagram" data-command="wireshark: filter bootp">
+              <script type="text/plain" class="terminal-output">
+[1] DHCP — getting an IP   |   filter:  bootp  (or dhcp)
+  Look for 4 packets: Discover -> Offer -> Request -> ACK
+  Ports UDP 67 (server) / 68 (client) . MAC broadcast</script>
+              <div class="terminal-media shot">
+                <span class="shot-tag">[ SCREENSHOT TO ADD ]</span>
+                <pre class="shot-desc">Wireshark, packet list filtered to "bootp".
+Show the 4 DHCP packets in order:
+  DHCP Discover  (0.0.0.0 -> 255.255.255.255)
+  DHCP Offer     (server -> client)
+  DHCP Request   (broadcast)
+  DHCP ACK       (lease confirmed)
+Expand one packet's detail pane to show the
+Ethernet / IP / UDP / DHCP layers and the
+offered IP address + lease time.</pre>
+              </div>
+            </div>
+          </div>
+          <aside class="notes">
+            Stage 1, DHCP. Filter is "bootp" (DHCP is built on the older BOOTP, so that's the keyword)
+            — you can also type "dhcp". Point out the four DORA packets. Note the Discover comes from
+            0.0.0.0 going to the broadcast 255.255.255.255, because the client has no address yet.
+            Open one packet and show the layered detail: Ethernet, IP, UDP on ports 67/68, then DHCP.
+            Call out the offered IP and the lease time. This is Ritz's DORA, live.
+          </aside>
+        </section>
+
+        <!-- Slide 54: DNS screenshot -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>wireshark: filter "dns"</strong>
+            </div>
+            <div class="terminal-body terminal-run visual-slide is-diagram" data-command="wireshark: filter dns">
+              <script type="text/plain" class="terminal-output">
+[2] DNS — name to address   |   filter:  dns
+  One query + one response for the FTP server name
+  UDP :53 . record type A (IPv4) returns the IP</script>
+              <div class="terminal-media shot">
+                <span class="shot-tag">[ SCREENSHOT TO ADD ]</span>
+                <pre class="shot-desc">Wireshark filtered to "dns".
+Show two packets:
+  Standard query   A  ftp.example.com
+  Standard query response  -> 93.184.216.34
+Expand the response packet to show the
+"Answers" section with the A record and the
+resolved IP address. Note UDP port 53.</pre>
+              </div>
+            </div>
+          </div>
+          <aside class="notes">
+            Stage 2, DNS. Filter "dns". We see the client ask for the FTP server's name and the
+            server reply with the IP address — that's the A record Ritz described. Expand the response
+            and show the Answers section with the resolved address. Tie it back: that IP is what the
+            next stage, the TCP handshake, will connect to. Note it's UDP on port 53 — fast and
+            connectionless, exactly why DNS uses UDP.
+          </aside>
+        </section>
+
+        <!-- Slide 55: TCP handshake screenshot -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>wireshark: filter "tcp.flags.syn==1"</strong>
+            </div>
+            <div class="terminal-body terminal-run visual-slide is-diagram" data-command="wireshark: filter tcp.flags.syn==1">
+              <script type="text/plain" class="terminal-output">
+[3] TCP — three-way handshake
+  filter:  tcp.flags.syn==1   (then follow the stream)
+  SYN  ->  SYN, ACK  ->  ACK   to server port 21</script>
+              <div class="terminal-media shot">
+                <span class="shot-tag">[ SCREENSHOT TO ADD ]</span>
+                <pre class="shot-desc">Wireshark showing the 3 handshake packets:
+  [SYN]      client -> server  (port 21)
+  [SYN, ACK] server -> client
+  [ACK]      client -> server
+Expand one packet's TCP layer to show the
+flag bits set and the Sequence / Acknowledgment
+numbers. Source/destination IP + ports visible
+in the columns.</pre>
+              </div>
+            </div>
+          </div>
+          <aside class="notes">
+            Stage 3, the TCP three-way handshake — this is Nick's slide, live. Filter on SYN packets,
+            or right-click and "Follow TCP Stream." Show the SYN, the SYN-ACK, and the ACK, all to
+            the server's port 21 for FTP control. Expand the TCP header to point out the flag bits and
+            the sequence and acknowledgment numbers incrementing. Highlight the source and destination
+            IPs and ports in the columns — that's the addressing Basildog covered.
+          </aside>
+        </section>
+
+        <!-- Slide 56: FTP auth + transfer screenshot -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>wireshark: filter "ftp"</strong>
+            </div>
+            <div class="terminal-body terminal-run visual-slide is-diagram" data-command="wireshark: filter ftp">
+              <script type="text/plain" class="terminal-output">
+[4][5] FTP — login & file transfer   |   filter:  ftp
+  USER / PASS (in CLEARTEXT!) -> 230 login ok
+  RETR file  ->  150 opening data  ->  226 complete</script>
+              <div class="terminal-media shot">
+                <span class="shot-tag">[ SCREENSHOT TO ADD ]</span>
+                <pre class="shot-desc">Wireshark filtered to "ftp" (control channel).
+Show the command/response exchange:
+  USER demo
+  PASS p@ssw0rd     (!) visible in PLAINTEXT
+  230  Login successful
+  RETR sample.txt
+  150  Opening data connection
+  226  Transfer complete
+Highlight the visible password to make the
+security point. Use "Follow TCP Stream" for a
+clean readable view.</pre>
+              </div>
+            </div>
+          </div>
+          <aside class="notes">
+            Stages 4 and 5, FTP login and transfer. Filter "ftp" to see the control channel. Walk
+            through USER, then PASS — and here's the security moment BlongVang warned about: the
+            password is sitting right there in plain text. Then the server's 230 confirms login, RETR
+            requests the file, 150 says the data connection is opening, and 226 confirms the transfer
+            finished. "Follow TCP Stream" gives a clean readable transcript. This is the payoff that
+            ties the protocol and security parts together.
+          </aside>
+        </section>
+
+        <!-- Slide 57: FTP-DATA + teardown screenshot -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>wireshark: filter "ftp-data || tcp.flags.fin==1"</strong>
+            </div>
+            <div class="terminal-body terminal-run visual-slide is-diagram" data-command="wireshark: ftp-data || tcp.flags.fin==1">
+              <script type="text/plain" class="terminal-output">
+[6][7] DATA transfer + TCP teardown
+  filter:  ftp-data   then   tcp.flags.fin==1
+  File bytes flow on the data channel, then
+  FIN / ACK / FIN / ACK closes the connection</script>
+              <div class="terminal-media shot">
+                <span class="shot-tag">[ SCREENSHOT TO ADD ]</span>
+                <pre class="shot-desc">Two things to capture:
+ (a) FTP-DATA packets carrying the file's bytes
+     on the separate data connection.
+ (b) Connection teardown: the FIN / ACK
+     exchange (FIN, ACK, FIN, ACK) that closes
+     both directions of the TCP connection.
+Show the [FIN, ACK] flags in the Info column.</pre>
+              </div>
+            </div>
+          </div>
+          <aside class="notes">
+            Stages 6 and 7. First switch to "ftp-data" to see the actual file bytes moving on the
+            separate data connection — remember FTP uses two channels. Then filter for FIN packets to
+            show the teardown: each side sends a FIN and the other ACKs it, closing both directions
+            gracefully. That's the bookend to Nick's handshake — the connection opened with SYNs and
+            closes with FINs.
+          </aside>
+        </section>
+
+        <!-- Slide 58: Layers in action / tie-together -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat layers-in-action.md</strong>
+            </div>
+            <div class="terminal-body terminal-run is-diagram" data-command="cat layers-in-action.md">
+              <script type="text/plain" class="terminal-output">
+One packet = every layer (expand it in Wireshark)
+  Frame    ->  Ethernet (L2):  src / dst MAC
+  Packet   ->  IP       (L3):  src / dst IP
+  Segment  ->  TCP      (L4):  ports, seq/ack, flags
+  Data     ->  FTP      (L7):  USER, PASS, RETR ...
+  Wireshark expands the WHOLE stack, per packet</script>
+            </div>
+          </div>
+          <aside class="notes">
+            To close the demo, pick any single FTP packet and expand its detail pane top to bottom.
+            In that one packet you can literally see every layer the whole team described: the
+            Ethernet frame with MAC addresses, the IP packet with IP addresses, the TCP segment with
+            ports and sequence numbers, and the FTP command as the payload. That's the big takeaway —
+            every concept from this presentation is present, stacked, in a single real packet. Back
+            to the team for the summary.
+          </aside>
+        </section>
+
+        <!-- =====================================================
+             SUMMARY
+             ===================================================== -->
+
+        <!-- Slide 59: Recap -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat summary.md</strong>
+            </div>
+            <div class="terminal-body terminal-run" data-command="cat summary.md">
+              <script type="text/plain" class="terminal-output">
+Key concepts recap
+ + OSI / TCP-IP layered models
+ + IP addressing: IPv4 and IPv6
+ + TCP reliability vs UDP speed
+ + DHCP gives addresses, DNS gives names
+ + Packets: headers, payload, MTU, fragmentation
+ + App protocols: FTP / HTTP / POP3 / IMAP</script>
+            </div>
+          </div>
+          <aside class="notes">
+            (BlongVang delivers the wrap-up.) Let's recap the whole journey. We started with the layered models that
+            describe communication, learned how devices are addressed with IPv4 and IPv6, saw how TCP
+            trades speed for reliability while UDP does the opposite, met the services — DHCP and DNS
+            — that make the network usable, broke open the packet itself, and covered the application
+            protocols people use daily.
+          </aside>
+        </section>
+
+        <!-- Slide 60: How it connects -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat takeaways.md</strong>
+            </div>
+            <div class="terminal-body terminal-run is-diagram" data-command="cat takeaways.md">
+              <script type="text/plain" class="terminal-output">
+How it all connects (one click does all of this)
+  DHCP      ->  you get an IP address
+  DNS       ->  a name becomes an address
+  IP        ->  packets are routed to the host
+  TCP       ->  a reliable connection + ports
+  FTP/HTTP  ->  the actual application runs
+  Every action online = all of these at once</script>
+            </div>
+          </div>
+          <aside class="notes">
+            The single most important takeaway: these aren't separate topics, they're one pipeline.
+            The moment you click a link, DHCP has already given you an address, DNS turns the name
+            into an IP, IP routes your packets, TCP makes the connection reliable, and the
+            application protocol does the real work — and the demo showed all of it happening in one
+            FTP session. Understanding how they hand off to each other is understanding networking.
+          </aside>
+        </section>
+
+        <!-- Slide 61: Real-world -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat real-world.md</strong>
+            </div>
+            <div class="terminal-body terminal-run" data-command="cat real-world.md">
+              <script type="text/plain" class="terminal-output">
+Real-world applications
+ Browsing, streaming, email, gaming, cloud, IoT
+ Network troubleshooting with packet captures
+ Security: encrypt protocols, watch open ports
+ These fundamentals underpin everything online
+ ... and they're the basis for jobs in IT/security</script>
+            </div>
+          </div>
+          <aside class="notes">
+            Where this matters in practice: literally everything you do online runs on these
+            fundamentals — browsing, streaming, email, gaming, cloud, IoT devices. Professionally,
+            these are the skills behind network troubleshooting and security work; reading a packet
+            capture like we just did is a real, employable skill. And the security thread runs through
+            all of it: encrypt your protocols and mind your open ports.
+          </aside>
+        </section>
+
+        <!-- Slide 62: References -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>cat references.md</strong>
+            </div>
+            <div class="terminal-body terminal-run is-diagram" data-command="cat references.md">
+              <script type="text/plain" class="terminal-output">
+References
+ + Course textbook — Chapter 12
+ + RFC documentation:
+     791 (IP) . 793 (TCP) . 768 (UDP)
+     2131 (DHCP) . 1035 (DNS) . 959 (FTP) . 2616 (HTTP)
+ + Wireshark documentation & wiki
+ + Cisco Networking Academy resources
+ + Additional academic references</script>
+            </div>
+          </div>
+          <aside class="notes">
+            Our sources: the course textbook chapter 12, the original RFC standards for each protocol
+            we discussed (those numbers are the actual RFCs if anyone wants to read the primary
+            specs), the Wireshark documentation we used for the demo, and Cisco Networking Academy
+            material. Happy to share any of these.
+          </aside>
+        </section>
+
+        <!-- Slide 63: Thank you / Q&A -->
+        <section>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>exit</strong>
+            </div>
+            <div class="terminal-body terminal-run is-title" data-command="exit">
+              <script type="text/plain" class="terminal-output">
+THANK YOU
+questions?</script>
+            </div>
+          </div>
+          <aside class="notes">
+            (Whole team.) That's our presentation — thank you for listening. We're happy to take any
+            questions. If a question targets a specific topic, the person who covered it can field it:
+            models/addressing, TCP, DHCP/DNS/packets, application protocols, or the Wireshark capture.
+          </aside>
+        </section>
+
+      </div>
+    </div>
+  </body>
+</html>

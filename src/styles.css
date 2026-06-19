@@ -1,0 +1,324 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #111416;
+  overflow: hidden;
+}
+
+.reveal {
+  background: #101314;
+}
+
+.reveal .slides {
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  text-align: left;
+  transform: none !important;
+}
+
+.reveal .slides > section,
+.reveal .slides > section.present {
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  padding: 0 !important;
+  transform: none !important;
+}
+
+.reveal .controls,
+.reveal .progress,
+.reveal .slide-number {
+  display: none !important;
+}
+
+.terminal {
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: #101314;
+  box-shadow: none;
+}
+
+.terminal-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 0 16px;
+  color: #9fb6bc;
+  background: #23292c;
+  font: 15px/1.2 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+}
+
+.terminal-bar span {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.terminal-bar span:nth-child(1) {
+  background: #ff5f57;
+}
+
+.terminal-bar span:nth-child(2) {
+  background: #ffbd2e;
+}
+
+.terminal-bar span:nth-child(3) {
+  background: #28c840;
+  margin-right: 12px;
+}
+
+.terminal-body {
+  box-sizing: border-box;
+  height: calc(100vh - 42px);
+  padding: clamp(22px, 4vw, 54px);
+  color: #d6fbff;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.02) 50%, transparent 50%) 0 0 / 100% 6px,
+    #101314;
+  font: clamp(20px, 2.55vw, 38px)/1.35 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  overflow: hidden;
+  text-shadow: 0 0 14px rgba(74, 228, 255, 0.34);
+  white-space: pre-wrap;
+}
+
+pre.terminal-body,
+.terminal-body pre {
+  margin: 0;
+}
+
+.prompt {
+  color: #41e8ef;
+}
+
+.terminal-line {
+  margin: 0;
+  color: inherit;
+  font: inherit;
+  white-space: pre-wrap;
+}
+
+.reveal .terminal-output-line {
+  margin: clamp(14px, 2.4vh, 32px) 0 0;
+  color: inherit;
+  width: 100%;
+  font: clamp(20px, 2.5vw, 40px)/1.4 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  white-space: pre-wrap;
+}
+
+/* Big punchy titles and section dividers */
+.reveal .terminal-body.is-title .terminal-output-line {
+  font-size: clamp(40px, 6vw, 92px);
+  line-height: 1.25;
+}
+
+/* Dense ASCII diagrams / tables */
+.reveal .terminal-body.is-diagram .terminal-output-line {
+  font-size: clamp(13px, 1.55vw, 26px);
+  line-height: 1.4;
+}
+
+.terminal-cursor {
+  display: inline-block;
+  width: 0.6em;
+  height: 1em;
+  margin-left: 0.12em;
+  background: #41e8ef;
+  animation: blink 1s steps(1) infinite;
+  vertical-align: -0.1em;
+}
+
+.visual-slide {
+  display: flex;
+  flex-direction: column;
+  font-size: clamp(16px, 1.8vw, 24px);
+}
+
+.terminal-media {
+  display: block;
+  width: min(84vw, 1280px);
+  max-height: 70vh;
+  margin: clamp(16px, 2.4vw, 28px) auto 0;
+  object-fit: contain;
+  border: 1px solid rgba(65, 232, 239, 0.28);
+  border-radius: 6px;
+  background: #f7faf9;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 260ms ease, transform 260ms ease;
+}
+
+.terminal-media.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Screenshot placeholder for the live demo slides.
+   Reuses .terminal-media so it fades in like a real image. */
+.terminal-media.shot {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 1.4vw, 18px);
+  align-items: flex-start;
+  justify-content: center;
+  width: min(82vw, 1180px);
+  max-height: 56vh;
+  padding: clamp(18px, 3vw, 42px);
+  background: rgba(65, 232, 239, 0.06);
+  border: 2px dashed rgba(65, 232, 239, 0.5);
+  border-radius: 10px;
+  object-fit: unset;
+  text-shadow: none;
+}
+
+.shot-tag {
+  font: 700 clamp(13px, 1.3vw, 20px)/1.2 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.08em;
+  color: #ffd24a;
+}
+
+.shot-desc {
+  margin: 0;
+  font: clamp(14px, 1.55vw, 23px)/1.45 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #9fe9ef;
+  white-space: pre-wrap;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ── Slide Index Overlay ─────────────────────────────── */
+#slide-index-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(10, 14, 16, 0.82);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slide-index-panel {
+  width: min(680px, 92vw);
+  max-height: 82vh;
+  background: #13191c;
+  border: 1px solid rgba(65, 232, 239, 0.25);
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 48px rgba(0, 0, 0, 0.7);
+}
+
+.slide-index-header {
+  padding: 12px 20px;
+  font: 700 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.18em;
+  color: #41e8ef;
+  text-transform: uppercase;
+  background: #23292c;
+  border-bottom: 1px solid rgba(65, 232, 239, 0.15);
+  flex-shrink: 0;
+}
+
+.slide-index-list {
+  overflow-y: auto;
+  flex: 1;
+  padding: 8px 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(65, 232, 239, 0.3) transparent;
+}
+
+.slide-index-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: background 120ms, border-color 120ms;
+}
+
+.slide-index-item:hover {
+  background: rgba(65, 232, 239, 0.07);
+  border-left-color: rgba(65, 232, 239, 0.4);
+}
+
+.slide-index-item.is-current {
+  background: rgba(65, 232, 239, 0.1);
+  border-left-color: #41e8ef;
+}
+
+.slide-index-num {
+  flex-shrink: 0;
+  font: 600 13px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: rgba(65, 232, 239, 0.55);
+  width: 26px;
+  text-align: right;
+}
+
+.slide-index-item.is-current .slide-index-num {
+  color: #41e8ef;
+}
+
+.slide-index-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.slide-index-title {
+  font: 600 14px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #d6fbff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.slide-index-note {
+  margin-top: 2px;
+  font: 12px/1.4 ui-sans-serif, system-ui, sans-serif;
+  color: rgba(214, 251, 255, 0.45);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 820px) {
+  .terminal-body {
+    padding: 22px;
+    font-size: 17px;
+  }
+
+  .reveal .terminal-output-line {
+    margin-top: 18px;
+    font-size: 20px;
+    line-height: 1.4;
+  }
+
+  .reveal .terminal-body.is-title .terminal-output-line {
+    font-size: 36px;
+  }
+
+  .reveal .terminal-body.is-diagram .terminal-output-line {
+    font-size: 12px;
+  }
+
+  .terminal-media {
+    width: 100%;
+    max-height: 52vh;
+  }
+}

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" role="img" aria-labelledby="title desc">
+  <title id="title">Mapa simple de red CCDC</title>
+  <desc id="desc">Diagrama con internet, firewall, DMZ y red interna.</desc>
+  <rect width="900" height="520" fill="#f7faf9"/>
+  <g fill="none" stroke="#1b2a30" stroke-width="5" stroke-linecap="round">
+    <path d="M170 260h160"/>
+    <path d="M420 260h130"/>
+    <path d="M640 210v-70h120"/>
+    <path d="M640 260h120"/>
+    <path d="M640 310v70h120"/>
+  </g>
+  <g font-family="Inter, Arial, sans-serif" text-anchor="middle">
+    <g>
+      <rect x="52" y="198" width="140" height="124" rx="16" fill="#d9f7ff" stroke="#0b7189" stroke-width="4"/>
+      <text x="122" y="252" font-size="26" font-weight="700" fill="#11323a">Internet</text>
+      <text x="122" y="286" font-size="17" fill="#36545a">red team</text>
+    </g>
+    <g>
+      <rect x="330" y="192" width="96" height="136" rx="14" fill="#fff4cd" stroke="#a87600" stroke-width="4"/>
+      <text x="378" y="254" font-size="23" font-weight="700" fill="#4a3705">FW</text>
+      <text x="378" y="286" font-size="16" fill="#665420">ufw</text>
+    </g>
+    <g>
+      <rect x="548" y="192" width="116" height="136" rx="14" fill="#e9ecff" stroke="#5a61a8" stroke-width="4"/>
+      <text x="606" y="254" font-size="23" font-weight="700" fill="#252b68">DMZ</text>
+      <text x="606" y="286" font-size="16" fill="#454b82">services</text>
+    </g>
+    <g>
+      <rect x="734" y="88" width="120" height="96" rx="14" fill="#e4f8ec" stroke="#257a4d" stroke-width="4"/>
+      <text x="794" y="128" font-size="22" font-weight="700" fill="#12472b">web01</text>
+      <text x="794" y="158" font-size="15" fill="#2e6446">nginx</text>
+    </g>
+    <g>
+      <rect x="734" y="212" width="120" height="96" rx="14" fill="#e4f8ec" stroke="#257a4d" stroke-width="4"/>
+      <text x="794" y="252" font-size="22" font-weight="700" fill="#12472b">db01</text>
+      <text x="794" y="282" font-size="15" fill="#2e6446">mysql</text>
+    </g>
+    <g>
+      <rect x="734" y="336" width="120" height="96" rx="14" fill="#e4f8ec" stroke="#257a4d" stroke-width="4"/>
+      <text x="794" y="376" font-size="22" font-weight="700" fill="#12472b">logs</text>
+      <text x="794" y="406" font-size="15" fill="#2e6446">siem</text>
+    </g>
+  </g>
+</svg>
