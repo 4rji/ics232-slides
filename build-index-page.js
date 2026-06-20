@@ -125,6 +125,6 @@ ${rows}
 </html>`;
 }
 
-mkdirSync(resolve(DIST, "index"), { recursive: true });
-writeFileSync(resolve(DIST, "index", "index.html"), buildIndexPage(), "utf8");
-console.log("Generated dist/index/index.html");
+mkdirSync(resolve(DIST, "slides"), { recursive: true });
+writeFileSync(resolve(DIST, "slides", "index.html"), buildIndexPage(), "utf8");
+console.log("Generated dist/slides/index.html");
