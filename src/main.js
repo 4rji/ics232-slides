@@ -225,6 +225,32 @@ function toggleIndex() {
   if (current) current.scrollIntoView({ block: "center" });
 }
 
+function toggleFullscreen() {
+  const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement;
+  const action = fullscreenElement
+    ? (document.exitFullscreen || document.webkitExitFullscreen)?.call(document)
+    : (document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen)?.call(document.documentElement);
+
+  Promise.resolve(action).catch(() => {
+    // Some browsers or embedded views can deny fullscreen requests.
+  });
+}
+
+function isEditableShortcutTarget(target) {
+  return target instanceof HTMLElement && (target.isContentEditable || target.matches("input, textarea, select"));
+}
+
+function installFullscreenShortcut() {
+  window.addEventListener("keydown", (event) => {
+    if (event.repeat || isEditableShortcutTarget(event.target) || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (event.key.toLowerCase() !== "f" && event.code !== "KeyF") return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    toggleFullscreen();
+  }, true);
+}
+
 function installKeyboardShortcuts() {
   if (!isAdmin) return;
 
@@ -271,4 +297,5 @@ deck.on("slidechanged", (event) => {
   publishSlide();
 });
 
+installFullscreenShortcut();
 deck.initialize();

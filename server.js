@@ -261,6 +261,22 @@ function buildIndexPage() {
   <main>
 ${rows}
   </main>
+  <script>
+    window.addEventListener("keydown", (event) => {
+      if (event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
+      if (event.key.toLowerCase() !== "f" && event.code !== "KeyF") return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement;
+      const action = fullscreenElement
+        ? (document.exitFullscreen || document.webkitExitFullscreen)?.call(document)
+        : (document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen)?.call(document.documentElement);
+
+      Promise.resolve(action).catch(() => {});
+    }, true);
+  </script>
 </body>
 </html>`;
 }

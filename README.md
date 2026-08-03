@@ -13,7 +13,7 @@ Abre el URL que imprime el servidor. El servidor escucha en `0.0.0.0`, asi que o
 
 - Flechas: avanzar o retroceder.
 - `S`: abrir notas del presentador en otra ventana.
-- `F`: pantalla completa.
+- `F`: activar o salir de pantalla completa en `/`, `/view`, `/cyber404`, `/index` y `/slides`.
 - `Esc`: vista general de slides.
 - No hay controles visuales en pantalla; esta pensada para manejarse con teclado.
 - Cada diapositiva escribe primero el comando y despues muestra la salida como terminal.
