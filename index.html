@@ -1091,10 +1091,9 @@ PROTOCOLS</script>
             </div>
           </div>
           <aside class="notes">
-            (BlongVang starts.) We've built up from the wire to the packet to the connection. Now
-            the top of the stack — the application protocols people actually use every day. I'll
-            cover FTP, HTTP, POP3, and IMAP, and for each: its purpose, default ports, basic
-            commands, common use cases, and the security considerations.
+            (BlongVang starts.) All four protocols use TCP because they require reliable communication. FTP transfers files, HTTP powers the web, and POP3 and IMAP handle email. Remember these default ports: FTP 21, HTTP 80, POP3 110, and IMAP 143. Each also has a secure TLS version.
+
+
           </aside>
         </section>
 
@@ -1144,11 +1143,8 @@ FTP — File Transfer Protocol
             </div>
           </div>
           <aside class="notes">
-            FTP moves files between computers. Its quirk is that it uses two separate connections: a
-            control channel on port 21 for commands, and a separate data channel for the actual file
-            bytes. In active mode the data uses port 20; in passive mode — PASV — the server opens a
-            port and tells the client, which is friendlier to firewalls and NAT. You authenticate
-            with a username and password, or log in anonymously for public servers.
+           FTP transfers files using two connections: port 21 for commands and a separate connection for data. Passive mode is commonly used because it works better with firewalls. Users log in with a username and password or anonymously on public servers.
+
           </aside>
         </section>
 
@@ -1172,11 +1168,7 @@ FTP basics
             </div>
           </div>
           <aside class="notes">
-            These are the core FTP commands, and you'll literally see them in the Wireshark demo:
-            USER and PASS to log in, LIST to see files, RETR to download, STOR to upload, PASV to go
-            passive, QUIT to leave. FTP is still used for website uploads, backups, and internal file
-            servers. The big security warning: classic FTP sends everything — including your password
-            — in plain text. Anyone capturing traffic can read it. Always prefer FTPS or SFTP.
+           The main FTP commands are USER, PASS, LIST, RETR, STOR, PASV, and QUIT. FTP is often used for website uploads, backups, and file servers. However, classic FTP sends usernames, passwords, and files in plain text, so secure alternatives like FTPS or SFTP should always be used.
           </aside>
         </section>
 
@@ -1189,12 +1181,8 @@ FTP basics
             </div>
             <div class="terminal-body terminal-run" data-command="cat http.md">
               <script type="text/plain" class="terminal-output">
-HTTP — HyperText Transfer Protocol
- Purpose: request and serve web resources
- Port: 80   (HTTPS = 443, encrypted with TLS)
- Stateless request / response model
- Client sends method + URL -> server responds
- Cookies / tokens add state on top</script>
+HTTP is the protocol used to access websites. A browser sends a request, and the server returns a response. It uses port 80, while HTTPS uses port 443 with TLS encryption. HTTP is stateless, so cookies and tokens are used to maintain user sessions.
+</script>
             </div>
           </div>
           <aside class="notes">
@@ -1226,12 +1214,8 @@ HTTP basics
             </div>
           </div>
           <aside class="notes">
-            HTTP uses methods to say what you want to do: GET to fetch, POST to submit, PUT to
-            create or replace, DELETE to remove. The server answers with a status code — 200 means
-            success, 301 a redirect, the famous 404 means not found, 500 is a server error. Beyond
-            web pages, this is also how REST APIs work. Security-wise the rule today is simple: use
-            HTTPS everywhere. Plain HTTP exposes everything in transit, so modern browsers actively
-            flag it as not secure.
+           Common HTTP methods include GET, POST, PUT, and DELETE. Servers respond with status codes such as 200 for success, 404 for not found, and 500 for server errors. Since HTTP sends data unencrypted, HTTPS should always be used to protect information.
+
           </aside>
         </section>
 
@@ -1254,12 +1238,8 @@ POP3 — Post Office Protocol v3
             </div>
           </div>
           <aside class="notes">
-            POP3 is the older email-retrieval protocol. The classic behavior: it downloads your
-            messages to one device and, by default, deletes them from the server. That made sense
-            when you had a single computer and limited server storage — you pull mail down and read
-            it offline. Port 110, or 995 for the encrypted POP3S. Its commands mirror what you'd
-            expect — log in, list, retrieve, delete. Like the others, plain POP3 is cleartext, so use
-            the TLS version.
+           POP3 is an older email protocol that downloads messages to one device and usually removes them from the server. It uses port 110 or port 995 with encryption. Because standard POP3 sends data in plain text, the encrypted version is recommended.
+
           </aside>
         </section>
 
@@ -1282,11 +1262,8 @@ IMAP — Internet Message Access Protocol
             </div>
           </div>
           <aside class="notes">
-            IMAP is the modern way email works. Instead of downloading and deleting, IMAP keeps your
-            mail on the server and synchronizes it across all your devices — phone, laptop, web. Read
-            a message on your phone and it shows as read on your laptop, because the folders and
-            read/unread flags live on the server. Port 143, or 993 for IMAPS. This is what almost
-            everyone uses today. Same security note: use the encrypted version.
+         IMAP stores email on the server and synchronizes messages across all devices. Reading or deleting an email on one device updates every other device. It uses port 143 or port 993 with encryption, making it the standard choice for modern email.
+
           </aside>
         </section>
 
@@ -1309,11 +1286,8 @@ POP3 vs IMAP
             </div>
           </div>
           <aside class="notes">
-            Quick comparison so the difference is crisp. POP3 pulls mail down to one device; IMAP
-            keeps it on the server. POP3 is poor for multiple devices; IMAP is built for them. IMAP
-            syncs folders and status; POP3 doesn't. POP3 is naturally offline since everything is
-            local; IMAP keeps cached copies for offline use. The short version: POP3 is single-device
-            and old-school, IMAP is multi-device and what we use now.
+            POP3 is designed for one device and offline access, while IMAP supports multiple devices by keeping messages on the server. IMAP also synchronizes folders and read status, making it the better option for most users today.
+
           </aside>
         </section>
 
@@ -1336,12 +1310,8 @@ Security considerations (all four protocols)
             </div>
           </div>
           <aside class="notes">
-            The common thread across all four protocols: in their original form they send everything
-            in clear text — usernames, passwords, content — so anyone who can capture the traffic can
-            read it. We'll prove exactly that in the demo when we see the FTP password in plain view.
-            The fix in every case is TLS: FTPS, HTTPS, POP3S, IMAPS. TLS gives you confidentiality
-            and integrity. Add good practices — close unused ports, use strong authentication — and
-            you're in much better shape. Next, Havi will show all of this happening live.
+            The biggest issue with the original versions of these protocols is that they send usernames, passwords, and data in plain text. During our demo, you'll see how easy it is to capture FTP credentials. Using TLS through FTPS, HTTPS, POP3S, and IMAPS encrypts traffic and protects data. Next, Havi will demonstrate these protocols live.
+
           </aside>
         </section>
 
