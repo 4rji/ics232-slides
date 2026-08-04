@@ -21,6 +21,7 @@ const deck = new Reveal({
 
 const TYPE_SPEED = 28;
 const OUTPUT_SPEED = 5;
+const STATE_STORAGE_KEY = "ics232-presentation-state";
 let applyingRemoteSlide = false;
 let syncReady = false;
 
@@ -95,8 +96,37 @@ function currentState() {
   };
 }
 
+function validState(state) {
+  return state
+    && Number.isInteger(state.indexh)
+    && state.indexh >= 0
+    && Number.isInteger(state.indexv)
+    && state.indexv >= 0;
+}
+
+function rememberState(state = currentState()) {
+  if (!validState(state)) return;
+
+  try {
+    localStorage.setItem(STATE_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // Private browsing or a restrictive browser policy may disable storage.
+  }
+}
+
+function rememberedState() {
+  try {
+    const state = JSON.parse(localStorage.getItem(STATE_STORAGE_KEY));
+    return validState(state) ? state : null;
+  } catch {
+    return null;
+  }
+}
+
 function goToSyncedSlide(state) {
-  if (!Number.isInteger(state.indexh) || !Number.isInteger(state.indexv)) return;
+  if (!validState(state)) return;
+
+  rememberState(state);
 
   const { indexh, indexv } = currentState();
   if (indexh === state.indexh && indexv === state.indexv) return;
@@ -127,22 +157,20 @@ async function publishSlide() {
 async function startSync() {
   if (isReceiver) return;
 
-  if (isAdmin) {
-    syncReady = true;
-    deck.slide(0, 0);
-    await publishSlide();
-  } else {
-    try {
-      const response = await fetch("/presentation-state");
-      if (response.ok) {
-        goToSyncedSlide(await response.json());
-      }
-    } catch {
-      return;
-    }
+  const localState = rememberedState();
 
-    syncReady = true;
+  try {
+    const response = await fetch("/presentation-state", { cache: "no-store" });
+    if (response.ok) {
+      goToSyncedSlide(await response.json());
+    } else if (localState) {
+      goToSyncedSlide(localState);
+    }
+  } catch {
+    if (localState) goToSyncedSlide(localState);
   }
+
+  syncReady = true;
 
   const events = new EventSource("/presentation-events");
   events.onmessage = (event) => {
@@ -294,6 +322,7 @@ deck.on("ready", (event) => {
 });
 deck.on("slidechanged", (event) => {
   runTerminal(event.currentSlide);
+  rememberState();
   publishSlide();
 });
 

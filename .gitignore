@@ -19,6 +19,8 @@ pnpm-debug.log*
 
 # Local tool/cache files
 .atl/
+.presentation-state.json
+.presentation-state.json.*.tmp
 .DS_Store
 
 # Editor folders

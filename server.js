@@ -1,4 +1,4 @@
-import { createReadStream, existsSync, readFileSync, statSync } from "node:fs";
+import { createReadStream, existsSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, join, normalize, resolve, sep } from "node:path";
 import { createServer as createViteServer } from "vite";
@@ -7,6 +7,7 @@ const HOST = "0.0.0.0";
 const PREVIEW = process.argv.includes("--preview");
 const ROOT = process.cwd();
 const DIST = resolve(ROOT, "dist");
+const STATE_FILE = resolve(ROOT, process.env.PRESENTATION_STATE_FILE || ".presentation-state.json");
 
 function getPort() {
   const portFlagIndex = process.argv.indexOf("--port");
@@ -23,7 +24,42 @@ function getPort() {
 
 const PORT = getPort();
 
-let state = { indexh: 0, indexv: 0 };
+const DEFAULT_STATE = { indexh: 0, indexv: 0 };
+
+function validState(value) {
+  return value
+    && Number.isInteger(value.indexh)
+    && value.indexh >= 0
+    && Number.isInteger(value.indexv)
+    && value.indexv >= 0;
+}
+
+function loadState() {
+  try {
+    if (!existsSync(STATE_FILE)) return { ...DEFAULT_STATE };
+
+    const savedState = JSON.parse(readFileSync(STATE_FILE, "utf8"));
+    return validState(savedState)
+      ? { indexh: savedState.indexh, indexv: savedState.indexv }
+      : { ...DEFAULT_STATE };
+  } catch (error) {
+    console.warn(`Could not restore presentation state from ${STATE_FILE}: ${error.message}`);
+    return { ...DEFAULT_STATE };
+  }
+}
+
+function persistState(nextState) {
+  const temporaryFile = `${STATE_FILE}.${process.pid}.tmp`;
+
+  try {
+    writeFileSync(temporaryFile, `${JSON.stringify(nextState)}\n`, "utf8");
+    renameSync(temporaryFile, STATE_FILE);
+  } catch (error) {
+    console.warn(`Could not persist presentation state to ${STATE_FILE}: ${error.message}`);
+  }
+}
+
+let state = loadState();
 const clients = new Set();
 
 const mimeTypes = {
@@ -97,8 +133,9 @@ async function handleSync(request, response) {
       const indexh = Number(body.indexh);
       const indexv = Number(body.indexv);
 
-      if (Number.isInteger(indexh) && Number.isInteger(indexv)) {
+      if (validState({ indexh, indexv })) {
         state = { indexh, indexv };
+        persistState(state);
         broadcast(state);
         response.writeHead(204);
         response.end();
@@ -328,7 +365,10 @@ async function start() {
         hmr: {
           server
         },
-        middlewareMode: true
+        middlewareMode: true,
+        watch: {
+          ignored: [STATE_FILE, `${STATE_FILE}.*.tmp`]
+        }
       }
     });
   }

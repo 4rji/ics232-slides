@@ -18,6 +18,7 @@ Abre el URL que imprime el servidor. El servidor escucha en `0.0.0.0`, asi que o
 - No hay controles visuales en pantalla; esta pensada para manejarse con teclado.
 - Cada diapositiva escribe primero el comando y despues muestra la salida como terminal.
 - Todas las ventanas conectadas al mismo servidor se sincronizan con la diapositiva activa.
+- La diapositiva activa se guarda en disco y en el navegador, y se restaura despues de recargar la pagina o reiniciar el servidor.
 - Controla la presentacion desde `/cyber404`; abre `/` o `/view` en las pantallas que solo deben mirar.
 
 Para abrirla desde otra computadora en la misma red, usa la IP local de la computadora que corre el servidor, por ejemplo `http://192.168.1.20:5173/cyber404` para controlar y `http://192.168.1.20:5173/` para solo ver. `127.0.0.1` solo funciona desde la misma computadora que corre el servidor.
