@@ -19,6 +19,11 @@ const deck = new Reveal({
   plugins: [Notes]
 });
 
+const isPdfExport = params.has("pdf-export");
+if (isPdfExport) {
+  window.Reveal = deck;
+}
+
 const TYPE_SPEED = 28;
 const OUTPUT_SPEED = 5;
 const STATE_STORAGE_KEY = "ics232-presentation-state";
@@ -32,6 +37,11 @@ if (isAdmin && location.hash) {
 }
 
 async function typeText(target, text, speed) {
+  if (isPdfExport) {
+    target.textContent += text;
+    return;
+  }
+
   for (const char of text) {
     target.textContent += char;
     await wait(char === "\n" ? speed * 3 : speed);
@@ -66,9 +76,9 @@ async function runTerminal(section) {
   line.append(prompt, commandNode, cursor);
   terminal.prepend(line);
 
-  await wait(260);
+  await wait(isPdfExport ? 0 : 260);
   await typeText(commandNode, command, TYPE_SPEED);
-  await wait(240);
+  await wait(isPdfExport ? 0 : 240);
 
   if (output) {
     const outputNode = document.createElement("pre");
@@ -81,7 +91,7 @@ async function runTerminal(section) {
   }
 
   if (media) {
-    await wait(180);
+    await wait(isPdfExport ? 0 : 180);
     media.classList.add("is-visible");
   }
 
